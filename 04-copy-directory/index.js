@@ -6,7 +6,7 @@ async function deleteDir(path) {
     await access(path);
     await rm(path, { recursive: true });
   } catch(err) {
-    console.log('No folder found.');
+    // console.log('No folder found.');
   }
 }
 
@@ -40,3 +40,5 @@ const sourceFolder = path.join(__dirname, 'files');
 const targetFolder = path.join(__dirname, 'files-copy');
 
 copyDir(sourceFolder, targetFolder);
+
+module.exports = copyDir;
