@@ -75,7 +75,7 @@ async function buildIndexHtml() {
 
     // Component name w/o file extension.
     const componentName = componentFile.name.split('.')[0];
-    template = template.replace(`{{${componentName}}}`, componentTemplate);
+    template = template.replaceAll(`{{${componentName}}}`, componentTemplate);
     await fs.promises.writeFile(path.join(__dirname, targetFolderName, 'index.html'), template);
   }
 }
