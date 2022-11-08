@@ -21,5 +21,3 @@ async function makeStyleBundle(targetFolderName, targetFileName) {
 }
 
 makeStyleBundle('project-dist', 'bundle.css');
-
-module.exports = makeStyleBundle;
