@@ -1,5 +1,5 @@
 const path = require('path');
-const { mkdir, readdir, copyFile, rm, access } = require('fs').promises;
+const { mkdir, readdir, stat, rm, access, copyFile } = require('fs').promises;
 
 async function deleteDir(path) {
   try {
@@ -10,22 +10,33 @@ async function deleteDir(path) {
   }
 }
 
-async function copyDir(source, target) {
-  await deleteDir(target);
-  await mkdir(target, { recursive: true });
+async function copyDir(from, to) {
+  const copy = async (source, target) => {
+    const dirEntries = await readdir(source);
 
-  const dirEntries = await readdir(source, { withFileTypes: true });
-  const filesToCopy = dirEntries.filter(entry => entry.isFile());
+    for (const entry of dirEntries) {
+      const entryStat = await stat(path.resolve(source, entry));
 
-  filesToCopy.forEach(({ name: fileName }) => copyFile(
-    path.join(source, fileName),
-    path.join(target, fileName)
-  ));
+      const currentSource = path.resolve(source, entry);
+      const currentTarget = path.resolve(target, entry);
 
-  console.log('Copied successfully!');
+      if (entryStat.isFile()) {
+        await copyFile(currentSource, currentTarget);
+      }
+
+      if (entryStat.isDirectory()) {
+        await mkdir(currentTarget, { recursive: true });
+        await copy(currentSource, currentTarget);
+      }
+    }
+  };
+
+  await deleteDir(to);
+  await mkdir(to, { recursive: true });
+  await copy(from, to);
 }
 
-copyDir(
-  path.join(__dirname, 'files'),
-  path.join(__dirname, 'files-copy')
-);
+const sourceFolder = path.join(__dirname, 'files');
+const targetFolder = path.join(__dirname, 'files-copy');
+
+copyDir(sourceFolder, targetFolder);
