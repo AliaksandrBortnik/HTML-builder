@@ -24,4 +24,5 @@ process.stdin.on('data', (text) => {
 });
 
 // Exit on CTRL+C
+process.stdin.on('SIGINT', () => process.emit('SIGINT'));
 process.on('SIGINT', exit);
