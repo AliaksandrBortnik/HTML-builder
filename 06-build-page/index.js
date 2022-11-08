@@ -3,6 +3,7 @@ const path = require('path');
 const { mkdir, readdir, stat, rm, access, copyFile } = require('fs').promises;
 
 const targetFolderName = 'project-dist';
+const targetFolderPath = path.join(__dirname, targetFolderName);
 
 async function deleteDir(path) {
   try {
@@ -66,16 +67,17 @@ async function buildIndexHtml() {
     { withFileTypes: true }
   );
 
-  componentFiles.forEach(componentFile => {
-    fs.readFile(path.join(__dirname, 'components', componentFile.name), 'utf-8', (err, componentTemplate) => {
-      if (err) throw err;
+  for (const componentFile of componentFiles) {
+    const componentTemplate = await fs.promises.readFile(
+      path.join(__dirname, 'components', componentFile.name),
+      'utf-8'
+    );
 
-      // Component name w/o file extension.
-      const componentName = componentFile.name.split('.')[0];
-      template = template.replace(`{{${componentName}}}`, componentTemplate);
-      fs.promises.writeFile(path.join(__dirname, targetFolderName, 'index.html'), template, () => {});
-    });
-  });
+    // Component name w/o file extension.
+    const componentName = componentFile.name.split('.')[0];
+    template = template.replace(`{{${componentName}}}`, componentTemplate);
+    await fs.promises.writeFile(path.join(__dirname, targetFolderName, 'index.html'), template);
+  }
 }
 
 async function copyAssets() {
@@ -85,7 +87,9 @@ async function copyAssets() {
   );
 }
 
-fs.mkdir(path.join(__dirname, targetFolderName), async () => {
+(async () => await deleteDir(targetFolderPath))();
+
+fs.mkdir(targetFolderPath, async () => {
   await buildIndexHtml();
   await makeStyleBundle('project-dist', 'style.css');
   await copyAssets();
