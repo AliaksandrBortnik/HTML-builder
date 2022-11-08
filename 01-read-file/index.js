@@ -1,6 +1,11 @@
 const path = require('path');
 const fs = require('fs');
+const { pipeline } = require('stream');
 
 const filePath = path.join(__dirname, 'text.txt');
-const rs = fs.createReadStream(filePath, 'utf-8');
-rs.on('data', text => process.stdout.write(text));
+
+pipeline(
+  fs.createReadStream(filePath, 'utf-8'),
+  process.stdout,
+  err => err && process.stdout.write(err.message)
+);
