@@ -1,9 +1,62 @@
 const fs = require('fs');
 const path = require('path');
-const copyDir = require('../04-copy-directory');
-const makeStyleBundle = require('../05-merge-styles');
+const { mkdir, readdir, stat, rm, access, copyFile } = require('fs').promises;
 
 const targetFolderName = 'project-dist';
+
+async function deleteDir(path) {
+  try {
+    await access(path);
+    await rm(path, { recursive: true });
+  } catch(err) {
+    // console.log('No folder found.');
+  }
+}
+
+async function copyDir(from, to) {
+  const copy = async (source, target) => {
+    const dirEntries = await readdir(source);
+
+    for (const entry of dirEntries) {
+      const entryStat = await stat(path.resolve(source, entry));
+
+      const currentSource = path.resolve(source, entry);
+      const currentTarget = path.resolve(target, entry);
+
+      if (entryStat.isFile()) {
+        await copyFile(currentSource, currentTarget);
+      }
+
+      if (entryStat.isDirectory()) {
+        await mkdir(currentTarget, { recursive: true });
+        await copy(currentSource, currentTarget);
+      }
+    }
+  };
+
+  await deleteDir(to);
+  await mkdir(to, { recursive: true });
+  await copy(from, to);
+}
+
+async function makeStyleBundle(targetFolderName, targetFileName) {
+  const targetStream = fs.createWriteStream(
+    path.join(__dirname, targetFolderName, targetFileName)
+  );
+
+  function isCssFileExt(fileName) {
+    return path.extname(fileName) === '.css';
+  }
+
+  const sourceFolderPath = path.join(__dirname, 'styles');
+  const dirEntries = await fs.promises.readdir(sourceFolderPath, { withFileTypes: true });
+  const cssFiles = dirEntries.filter(entry => entry.isFile() && isCssFileExt(entry.name));
+
+  cssFiles.forEach(file =>
+    fs.createReadStream(path.join(sourceFolderPath, file.name))
+      .pipe(targetStream)
+  );
+}
 
 async function buildIndexHtml() {
   let template = await fs.promises.readFile(path.join(__dirname, 'template.html'), 'utf-8');
